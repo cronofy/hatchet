@@ -165,6 +165,45 @@ describe Message do
     end
   end
 
+  describe 'filtering backtraces' do
+    def generate_error
+      Invisible.raise_alarm
+    rescue => e
+      e
+    end
+
+    class Invisible
+      def self.raise_alarm
+        raise 'Example failure'
+      end
+    end
+
+    let(:dirname) { File.dirname(__FILE__) }
+    let(:error) { generate_error }
+
+    let(:subject) do
+      Message.new(error: generate_error, backtrace_silencers: backtrace_silencers)
+    end
+
+    require 'rbconfig'
+
+    describe 'regex values' do
+      let(:backtrace_silencers) do
+        [
+          /invisible/
+        ]
+      end
+
+      it 'removes lines matching the keys' do
+        backtrace = subject.error.backtrace
+
+        backtrace_silencers.each do |silencer_regex|
+          refute backtrace.find { |line| line.match? silencer_regex }, "Backtrace should not have a line starting '#{silencer_regex}'\n\t#{backtrace.join("\n\t")}"
+        end
+      end
+    end
+  end
+
   if ENV["BENCH"] then
     describe 'benchmarks' do
       let(:subject) { Message.new(ndc: [], message: 'Evaluated') }
