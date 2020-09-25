@@ -18,17 +18,17 @@ module Hatchet
   class Message
 
     class ErrorDecorator < SimpleDelegator
-      def initialize(error, backtrace_filters, backtrace_silencers: [])
+      def initialize(error, backtrace_filters, backtrace_silencers: nil)
         super(error)
         @error = error
-        @backtrace_silencers = backtrace_silencers
+        @backtrace_silencers = backtrace_silencers || []
         @backtrace_filters = backtrace_filters
       end
 
       def backtrace
         @backtrace ||= @error
           .backtrace
-          .reject { |line| @backtrace_silencers.any? { |silencer| line.match?(silences) } }
+          .reject { |line| @backtrace_silencers.any? { |silencer| line.match?(silencer) } }
           .map { |line| __filtered_line(line) }
       end
 
@@ -104,7 +104,7 @@ module Hatchet
         @message = args unless block
       end
 
-      @error = ErrorDecorator.new(@error, args[:backtrace_filters]) if @error && args[:backtrace_filters]
+      @error = ErrorDecorator.new(@error, args[:backtrace_filters], backtrace_silencers: args[:backtrace_silencers]) if @error && args[:backtrace_filters]
       @block = block
     end
 

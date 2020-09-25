@@ -48,6 +48,46 @@ module Hatchet
 
     alias_method :backtrace_filters, :backtrace_filter
 
+    # Public: Adds backtrace silencers provided in the form of a Hash.
+    #
+    # Each line of the backtrace starting with a key is replaced by its
+    # corresponding value.
+    #
+    # Example
+    #
+    #   configuration.configure do |config|
+    #     config.backtrace_silencer /foo/
+    #   end
+    #
+    # Will silencer a backtrace line like:
+    #
+    #   /applications/my_app/releases/current/lib/foo.rb:42:in `main'
+    #   /applications/my_app/releases/current/lib/example.rb:42:in `call_thing'
+    #
+    # Into:
+    #
+    #   /applications/my_app/releases/current/lib/example.rb:42:in `call_thing'
+    #
+    # Returns nothing.
+    #
+    def backtrace_silencer(silencers = nil)
+      if silencers
+        @backtrace_silencers = silencers.map do |silencer| 
+          case silencer
+          when Regexp
+            silencer
+          when String
+            /#{silencer}/i
+          else
+            nil
+          end
+        end.compact
+      end
+      @backtrace_silencers
+    end
+
+    alias_method :backtrace_silencers, :backtrace_silencer
+
     # Public: Returns the default formatter given to the appenders that have not
     # had their formatter explicitly set.
     #
@@ -68,6 +108,7 @@ module Hatchet
     #
     def reset!
       @backtrace_filters = {}
+      @backtrace_silencers = []
       @levels = { nil => :info }
       @appenders = []
 

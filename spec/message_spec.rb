@@ -166,15 +166,17 @@ describe Message do
   end
 
   describe 'filtering backtraces' do
+    class TestOnlyException < StandardError; end
+
     def generate_error
       Invisible.raise_alarm
-    rescue => e
+    rescue TestOnlyException => e
       e
     end
 
     class Invisible
       def self.raise_alarm
-        raise 'Example failure'
+        raise TestOnlyException, 'Example failure'
       end
     end
 
@@ -190,7 +192,7 @@ describe Message do
     describe 'regex values' do
       let(:backtrace_silencers) do
         [
-          /invisible/
+          /invisible/i
         ]
       end
 
@@ -199,6 +201,22 @@ describe Message do
 
         backtrace_silencers.each do |silencer_regex|
           refute backtrace.find { |line| line.match? silencer_regex }, "Backtrace should not have a line starting '#{silencer_regex}'\n\t#{backtrace.join("\n\t")}"
+        end
+      end
+    end
+
+    describe 'string values' do
+      let(:backtrace_silencers) do
+        [
+          "Invisible"
+        ]
+      end
+
+      it 'removes lines matching the keys' do
+        backtrace = subject.error.backtrace
+
+        backtrace_silencers.each do |silencer_string|
+          refute backtrace.find { |line| line.include? silencer_string }, "Backtrace should not have a line starting '#{silencer_string}'\n\t#{backtrace.join("\n\t")}"
         end
       end
     end
