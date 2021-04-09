@@ -386,9 +386,15 @@ module Hatchet
       # Ensure configuration and context set - can be lost by marshalling and
       # unmarshalling the logger.
       @configuration ||= Hatchet.configuration
-      @ndc ||= Hatchet::NestedDiagnosticContext.current
+      @ndc = Hatchet::NestedDiagnosticContext.current
 
-      msg = Message.new(ndc: @ndc.context.clone, message: message, error: error, backtrace_filters: @configuration.backtrace_filters, &block)
+      msg = Message.new({
+        ndc: @ndc.context.clone,
+        message: message,
+        error: error,
+        backtrace_filters: @configuration.backtrace_filters,
+        backtrace_silencers: @configuration.backtrace_silencers
+      }, &block)
 
       @configuration.appenders.each do |appender|
         if appender.enabled?(level, @context)
